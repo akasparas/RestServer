@@ -34,6 +34,8 @@ class RestFormat
 	const AMF = 'applicaton/x-amf';
 	const JSON = 'application/json';
 	const XML = 'application/xml';
+	const CSV = 'text/csv';
+	const CSVX = 'application/excel';
 	static public $formats = array(
 		'plain' => RestFormat::PLAIN,
 		'txt' => RestFormat::PLAIN,
@@ -41,6 +43,8 @@ class RestFormat
 		'amf' => RestFormat::AMF,
 		'json' => RestFormat::JSON,
 		'xml'  => RestFormat::XML,
+		'csv' => RestFormat::CSV,
+		'csvx' => RestFormat::CSVX,
 	);
 }
 
@@ -428,9 +432,14 @@ class RestServer
 					unset($data->$prop);
 				}
 			}
-			$data = json_encode($data);
-			if ($data && $this->mode == 'debug') {
-				$data = $this->json_format($data);
+			if ($this->format == RestFormat::CSV ||
+			    $this->format == RestFormat::CSVX){
+				$data = $this->csv_format($data);
+			} else {
+				$data = json_encode($data);
+				if ($data && $this->mode == 'debug') {
+					$data = $this->json_format($data);
+				}
 			}
 		}
 
@@ -545,6 +554,25 @@ class RestServer
 		}
 		
 		return $new_json;
+	}
+
+	private function csv_format($data) {
+		$new_data = "";
+		$first = 1;
+		foreach ($data as $d) {
+			if ($first) {
+				$first = 0;
+				foreach ($d as $k=>$v) {
+					$new_data .= $k . ',';
+				}
+				$new_data .= "\n";
+			}
+			foreach ($d as $k=>$v) {
+				$new_data .= '"' . $v . '",';
+			}
+			$new_data .= "\n";
+		}
+		return $new_data;
 	}
 
 
